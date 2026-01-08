@@ -15,7 +15,8 @@ from discord.ext import commands
 from discord.ui import View, Button
 from sorter.auto_sort_excel import sortmain,averageGS, sortbyGs,auth,sortbyABC,counter, quickfind
 from discord import app_commands
-cnames = ["Submission","Discord Name","Family Name","Class","Ap","AAP","DP","Position choice", "Kroggy?","Boats?","PVP?","GS"]
+cnames = ["Submission","Discord Name","Family Name","Class","Ap","AAP","DP","Position choice", "Kroggy woggy?","Boats?","PVP?","GS"]
+comands = ["help - it wont help you","cmdlookup","setGL <stuff you wanna say to g league people>","reload - doesnt do anything yet","names - lists g league guys","getplayer <name>(gear search)","agetplayer(admin) <name> - admin search the bot will bully you if you arent leadership","getsurvey - gear survey","delete - removes pins and deletes commands and bot stuff","button - g league button","status g league status","update <nameofch> updates lookup commands","lookup <name of lookup command>","updategearsheets- kinda says what it does noob",]
 intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
@@ -74,7 +75,11 @@ def clean(name):
     name = unicodedata.normalize("NFKD", name)
     name = name.encode("ascii","ignore").decode("ascii")
     return re.sub(r'[^a-zA-Z0-9]', '', name).lower()
-
+def cleans(name):
+    import re, unicodedata
+    name = unicodedata.normalize("NFKD", name)
+    name = name.encode("ascii", "ignore").decode("ascii")
+    return re.sub(r'[^a-zA-Z0-9 ]', '', name).lower()
 
 @bot.event
 async def on_message(message):
@@ -99,8 +104,24 @@ async def on_message(message):
         display_message = new_message[7:]
         gearlookupmessage = new_message[0:9]
         getlookupmessagen = new_message[10:]
+        getgearsurvey = new_message[0:13]
         if trigger_message == "help":
-            await message.channel.send('To look something up -> !AB lookup <stuff listed in important shit>\nGo here for more help -> https://discord.com/channels/808051243183767582/1215463505017176124/1266138009175199787')
+            embed = discord.Embed(title="Commands")
+            embed.description = "\n".join(f"{name}" for name in comands)
+            await message.channel.send(embed=embed)
+        if new_message[0:9] == "cmdlookup":
+            xls = pd.read_excel("bdo-resources.xlsx", sheet_name="Sheet1",header=None)
+            le = len(xls)
+            listforrow = []
+            for i in range(0,le):
+                rown = xls.iloc[i].dropna().tolist()
+                if len(rown) != 2:
+                        name = rown[2]
+                        name = cleans(name)
+                        listforrow.append(name)
+            embed = discord.Embed(title="looks up commands Commands\n!AB lookup <one of these commands>")
+            embed.description = "\n".join(f"{name}" for name in listforrow)
+            await message.channel.send(embed=embed)
         if trigger_message == "setGL":
             messageID = message
             role_id = 1216176901568073848
@@ -115,12 +136,13 @@ async def on_message(message):
         if trigger_message == "reload":
             print(ping_message)
         if gearlookupmessage == "getplayer":
+            ping_message = await message.channel.send('searching for ' + getlookupmessagen)
             sortmain()
             results = quickfind(getlookupmessagen)
             outgear = []
             if results != "no results":
                 if any(role.name == "Officer" or role.name == "GM" or clean(message.author.display_name.lower()) == results[1].lower() or clean(message.author.name.lower()) == results[1].lower()for role in message.author.roles):
-                    embed = discord.Embed(title="Player Summary\nFamily name: " + results[2] +"\nDiscord Name: " + results[1])
+                    embed = discord.Embed(title="Player Summary\nFamily name: " + results[2] +"\nDiscord Name: " + results[1] + "\nDo you need to update?: https://forms.gle/fnKMBpFJbPpEYrQq6")
                     lens = len(cnames)
                     for i in range(lens):
                         value = str(cnames[i]) + ": " + str(results[i])
@@ -157,14 +179,14 @@ async def on_message(message):
             else:
                 embed = discord.Embed(title="No results check spelling please. If you typed noob you are stupid")
                 await message.channel.send(embed=embed)
-        if trigger_message == "upgear":
+        if new_message[0:16] == "updategearsheets":
             sortmain()
             if any(role.name == "Officer" or role.name == "GM" for role in message.author.roles):
                 embed = discord.Embed(title="done :3 \nhttps://docs.google.com/spreadsheets/d/1Gggr3CyEMCZcjImj7JGRAEvZZ0TJc3OIpbgTUlvyha4/edit?gid=1765336975#gid=1765336975")
             else: 
                 embed = discord.Embed(title="https://forms.gle/fnKMBpFJbPpEYrQq6")
             await message.channel.send(embed=embed)
-        if trigger_message == "uplink":
+        if getgearsurvey == "getgearsurvey":
             embed = discord.Embed(title="https://forms.gle/fnKMBpFJbPpEYrQq6")
             await message.channel.send(embed=embed)
         if trigger_message == "getsum":
@@ -273,7 +295,6 @@ async def on_message(message):
                                                                 if(channel.name != "other-games"):
                                                                     if(channel.name != "Leadership"):
                                                                         i = 1
-                                                                        print(channel.name)
                                                                         async for msg in channel.history(): 
                                                                             if channel.name == str(display_message): 
                                                                                 stuff = 'A'+ str(i) 
@@ -300,7 +321,8 @@ async def on_message(message):
                 for move in range(1,max_rows+1):
                     valuez = str(sh.cell(row=move, column=3).value)
                     valuez = valuez.lstrip()
-                    if str(valuez).lower() == display_message.lower():
+                    valuez = clean(valuez)
+                    if str(valuez).lower() == clean(display_message.lower()):
                         print(f"Found row {move} with value {sh.cell(row=move, column=3).value}")   
                         dm = sh.cell(row=move, column=1).value
             for channel in channels:
@@ -324,7 +346,18 @@ async def on_message(message):
                                                                                 if str(msg.id) == str(dm):  
                                                                                     await message.channel.send(msg.jump_url)
                                                                                     return
-            ping_message = await message.channel.send('Nope cant find ' + display_message + '\nIf you need help go here -> https://discord.com/channels/808051243183767582/1215463505017176124/1266138009175199787')
+            xls = pd.read_excel("bdo-resources.xlsx", sheet_name="Sheet1",header=None)
+            le = len(xls)
+            listforrow = []
+            for i in range(0,le):
+                rown = xls.iloc[i].dropna().tolist()
+                if len(rown) != 2:
+                        name = rown[2]
+                        name = cleans(name)
+                        listforrow.append(name)
+            embed = discord.Embed(title="looks up commands Commands\n!AB lookup <one of these commands>")
+            embed.description = "\n".join(f"{name}" for name in listforrow)
+            await message.channel.send(embed=embed)
 @bot.event 
 async def on_reaction_add(reaction,user):
     global user_array
