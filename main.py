@@ -13,10 +13,10 @@ import pandas as pd
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
-from sorter.auto_sort_excel import sortmain,averageGS, sortbyGs,auth,sortbyABC,counter, quickfind
+from sorter.auto_sort_excel import sortmain,averageGS, sortbyGs,auth,sortbyABC,counter, quickfind, rmname
 from discord import app_commands
 cnames = ["Submission","Discord Name","Family Name","Class","Ap","AAP","DP","Position choice", "Kroggy woggy?","Boats?","PVP?","GS"]
-comands = ["help - it wont help you","cmdlookup","setGL <stuff you wanna say to g league people>","reload - doesnt do anything yet","names - lists g league guys","getplayer <name>(gear search)","agetplayer(admin) <name> - admin search the bot will bully you if you arent leadership","getsurvey - gear survey","delete - removes pins and deletes commands and bot stuff","button - g league button","status g league status","update <nameofch> updates lookup commands","lookup <name of lookup command>","updategearsheets- kinda says what it does noob",]
+comands = ["help - it wont help you","getgearsheets(admin) the bot will bully you if not leadership >:D","cmdlookup - bdo resources commands !AB lookup <one of these commands>","setGL <stuff you wanna say to g league people>","reload - doesnt do anything yet","names - lists g league guys","getplayer <name>(gear search)","agetplayer(admin) <name> - admin search the bot will bully you if you arent leadership","getgearsurvey - gear survey","delete - removes pins and deletes commands and bot stuff","button - g league button","status g league status","channelupdate <nameofch> updates lookup commands","lookup <name of lookup command>","updategearsheets- kinda says what it does noob", "rmplayer(admin) - removes a player from sheets (duh)","noobslum - prints out gearsurvey link and fatchudz discord"]
 intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
@@ -80,7 +80,25 @@ def cleans(name):
     name = unicodedata.normalize("NFKD", name)
     name = name.encode("ascii", "ignore").decode("ascii")
     return re.sub(r'[^a-zA-Z0-9 ]', '', name).lower()
+def find_member_by_display_name(guild, name):
+    name = name.lower()
+    for member in guild.members:
+        # Check nickname first, then display name
+        gname = removequ(member.display_name.lower())
+        vname = member.name
+        gname = clean(gname)
+        if gname == name or vname == name:
+            return member
+    return None
 
+def removequ(vname):
+    start = vname.find('"')+1
+    end = vname.find('"',start)
+    if start > 0 and end > start:
+        result = vname[start:end]
+    else:
+        result = vname
+    return result
 @bot.event
 async def on_message(message):
     global stuff
@@ -105,6 +123,8 @@ async def on_message(message):
         gearlookupmessage = new_message[0:9]
         getlookupmessagen = new_message[10:]
         getgearsurvey = new_message[0:13]
+        rmplayer = new_message[0:8]
+        rmplayerhcoice = new_message[8:]
         if trigger_message == "help":
             embed = discord.Embed(title="Commands")
             embed.description = "\n".join(f"{name}" for name in comands)
@@ -122,7 +142,7 @@ async def on_message(message):
             embed = discord.Embed(title="looks up commands Commands\n!AB lookup <one of these commands>")
             embed.description = "\n".join(f"{name}" for name in listforrow)
             await message.channel.send(embed=embed)
-        if trigger_message == "setGL":
+        if new_message[0:5] == "setgl":
             messageID = message
             role_id = 1216176901568073848
             #print(messageID)
@@ -135,14 +155,28 @@ async def on_message(message):
             await ping_message.add_reaction('💪') 
         if trigger_message == "reload":
             print(ping_message)
+        if  rmplayer == "rmplayer":
+            ping_message = await message.channel.send('searching for '  + rmplayerhcoice + ' to remove')
+            if any(role.name == "Officer" or role.name == "GM" for role in message.author.roles):
+                rmplayerhcoice = clean(rmplayerhcoice)
+                sortmain()
+                if rmname(rmplayerhcoice) == False:
+                    sortmain()
+                    ping_message = await message.channel.send('Cannot find player ' + rmplayerhcoice)
+                else:
+                    ping_message = await message.channel.send('player ' + rmplayerhcoice + ' was removed')
+            else :
+                ping_message = await message.channel.send('Erm... ' + message.author.display_name + " you arent leadership.. not chud behavior https://cdn.discordapp.com/attachments/687722023711014990/1441256202607792138/caption.gif?ex=69777c2f&is=69762aaf&hm=a7434718891dd1b2b12d19e0ae4aa053ebddf48600efee42fcd0f0b0d78ce47a&")
+
         if gearlookupmessage == "getplayer":
             ping_message = await message.channel.send('searching for ' + getlookupmessagen)
             sortmain()
             results = quickfind(getlookupmessagen)
             outgear = []
             if results != "no results":
-                if any(role.name == "Officer" or role.name == "GM" or clean(message.author.display_name.lower()) == results[1].lower() or clean(message.author.name.lower()) == results[1].lower()for role in message.author.roles):
-                    embed = discord.Embed(title="Player Summary\nFamily name: " + results[2] +"\nDiscord Name: " + results[1] + "\nDo you need to update?: https://forms.gle/fnKMBpFJbPpEYrQq6")
+                displayname = removequ(message.author.display_name.lower())
+                if any(role.name == "Officer" or role.name == "GM" or clean(displayname) == results[1].lower() or clean(message.author.name.lower()) == results[1].lower()for role in message.author.roles):
+                    embed = discord.Embed(title="Player Summary\nFamily name: " + results[2] +"\nDiscord Name: " + message.author.name.lower() + "\nNickname: " + message.author.display_name.lower() + "\nDo you need to update?: https://forms.gle/fnKMBpFJbPpEYrQq6")
                     lens = len(cnames)
                     for i in range(lens):
                         value = str(cnames[i]) + ": " + str(results[i])
@@ -159,7 +193,7 @@ async def on_message(message):
                     embed = discord.Embed(title="Why you care what this doods gear is.. stop being stinky and ask them >:C")
                     await message.channel.send(embed=embed) 
             else:
-                embed = discord.Embed(title="No results check spelling please. If you typed noob you are stupid")
+                embed = discord.Embed(title="No results.\ncheck spelling please\nIf you arent into the guild then idk wtf you are doing\nIf you typed noob you are stupid... denny")
                 await message.channel.send(embed=embed)
         if new_message[0:10] == "agetplayer":
             results = quickfind(new_message[11:])
@@ -180,6 +214,7 @@ async def on_message(message):
                 embed = discord.Embed(title="No results check spelling please. If you typed noob you are stupid")
                 await message.channel.send(embed=embed)
         if new_message[0:16] == "updategearsheets":
+            embed = discord.Embed(title="updating gear sheet :3")
             sortmain()
             if any(role.name == "Officer" or role.name == "GM" for role in message.author.roles):
                 embed = discord.Embed(title="done :3 \nhttps://docs.google.com/spreadsheets/d/1Gggr3CyEMCZcjImj7JGRAEvZZ0TJc3OIpbgTUlvyha4/edit?gid=1765336975#gid=1765336975")
@@ -189,6 +224,13 @@ async def on_message(message):
         if getgearsurvey == "getgearsurvey":
             embed = discord.Embed(title="https://forms.gle/fnKMBpFJbPpEYrQq6")
             await message.channel.send(embed=embed)
+        if new_message[0:13] == "getgearsheets":
+            if any(role.name == "Officer" or role.name == "GM" for role in message.author.roles):
+                embed = discord.Embed(title="https://docs.google.com/spreadsheets/d/1Gggr3CyEMCZcjImj7JGRAEvZZ0TJc3OIpbgTUlvyha4/edit?gid=1765336975#gid=1765336975")
+                await message.channel.send(embed=embed)
+            else:
+                embed = discord.Embed(title="wtf you arent leadership >:C stinky")
+                await message.channel.send(embed=embed)
         if trigger_message == "getsum":
             embed = discord.Embed(title="Guild Summary")
             auth("Response")
@@ -248,6 +290,9 @@ async def on_message(message):
             with open("C:\\Users\\vwalk\\sorter\\names.txt", "w", encoding="utf-8") as f:
                 for member in role.members:
                     f.write(member.name + "\n")
+        if new_message[0:8] == "noobslum":
+            embed = discord.Embed(title="Welcome to the guild here is the chudz (the alliance) discord\nhttps://discord.gg/gwGYjkVU\nplease fill out the gear survey\nhttps://forms.gle/fnKMBpFJbPpEYrQq6")
+            await message.channel.send(embed=embed)
         if trigger_message == "delete":
             ping_message = await message.channel.send('volc protocol starting.. DELETING MESSAGES BEEP BOOP')
             await message.channel.purge(limit=None, check=lambda msg: msg.pinned)
@@ -261,25 +306,51 @@ async def on_message(message):
                 if msg.author.name == "Angry_Bot":
                     await msg.delete()
         if trigger_message == "status":
-            embed = discord.Embed(title="Team Stinkersw")
+            embed = discord.Embed(title="Mini chuds")
             temp_array = user_array
             numberofthumbsup = len(temp_array)
+            gearlist = []
+            global ii
+            ii = 0
+            sortmain()
             if(numberofthumbsup <= 0):
                 with open("usertextfile.txt", "r") as f:
                     temp_array = [line.strip() for line in f if line.strip()]   
             for s in temp_array:
                 if s == "Angry_Bot":
                     temp_array.remove("Angry_Bot")
+            role = discord.utils.get(message.guild.roles, name="Netslum")
+            for name in temp_array:
+                name2 = find_member_by_display_name(role,name)
+                pick = quickfind(name2.name)
+                if pick == "no results":
+                    n = name2.display_name.lower()
+                    n = removequ(n)
+                    n = clean(n)
+                    gearlist.append(quickfind(n))
+                else: 
+                    gearlist.append(pick)  
+            listnum = []
+            if len(gearlist) > 0:
+                for i,gs in enumerate(gearlist):
+                    if len(gs) <= 11 or pd.isna(gs[11]):
+                        print(f"cant find   #{i+1}")
+                    else:
+                        listnum.append(int(gs[11]))
+            total = sum(listnum) / len(listnum)
             numberofthumbsup = len(temp_array)
             ping_message = await message.channel.send(str(numberofthumbsup) + "/10")
-            embed.description = "\n".join(f"• {name}" for name in temp_array)
+            embed.description = "\nAveGS: " + str(total) + "\n" + "\n".join(f"• {name}" for name in temp_array)
             await message.channel.send(embed=embed)
-        if trigger_message == "update":
+        if new_message[0:13] == "channelupdate":
             channels = guild.channels
-            workbook = xlsxwriter.Workbook(display_message+'.xlsx')
+            workbook = xlsxwriter.Workbook(new_message[14:]+'.xlsx')
             worksheet = workbook.add_worksheet()
             display_message = new_message[7:]
+            embed = discord.Embed(title="Updating " + new_message[14:])
+            await message.channel.send(embed=embed)
             for channel in channels:
+                print(channel.name)
                 if(channel.name != "NetSlum"):
                     if(channel.name != "BDO Stuff"):
                         if(channel.name != "NSFW"):
@@ -296,7 +367,7 @@ async def on_message(message):
                                                                     if(channel.name != "Leadership"):
                                                                         i = 1
                                                                         async for msg in channel.history(): 
-                                                                            if channel.name == str(display_message): 
+                                                                            if channel.name == str(new_message[14:]): 
                                                                                 stuff = 'A'+ str(i) 
                                                                                 stuff2 = 'B' + str(i)
                                                                                 stuff3 = 'C' + str(i)
@@ -323,8 +394,26 @@ async def on_message(message):
                     valuez = valuez.lstrip()
                     valuez = clean(valuez)
                     if str(valuez).lower() == clean(display_message.lower()):
+                        embed = discord.Embed(title="Getting the link for " + valuez)
                         print(f"Found row {move} with value {sh.cell(row=move, column=3).value}")   
                         dm = sh.cell(row=move, column=1).value
+                        await message.channel.send(embed=embed)
+                '''
+                    else:
+                        xls = pd.read_excel("bdo-resources.xlsx", sheet_name="Sheet1",header=None)
+                        le = len(xls)
+                        listforrow = []
+                        for i in range(0,le):
+                            rown = xls.iloc[i].dropna().tolist()
+                            if len(rown) != 2:
+                                name = rown[2]
+                                name = cleans(name)
+                                listforrow.append(name)
+                        embed = discord.Embed(title="looks up commands Commands\n!AB lookup <one of these commands>")
+                        embed.description = "\n".join(f"{name}" for name in listforrow)
+                        await message.channel.send(embed=embed)
+                        break
+                '''
             for channel in channels:
                 #if channel.name == "bdo-resources":
                 if(channel.name != "NetSlum"):

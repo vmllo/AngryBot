@@ -65,7 +65,7 @@ def upload(df,sheet,max):
     df_upload.values.tolist()
 )   
     worksheet.resize(rows=len(df_upload) + 1)
-    
+
 
 
 def downloadsheet():
@@ -101,13 +101,33 @@ def parse_dt(s):
 
 def latestfilter(listforrow):
     now = datetime.now()
-    cutoff = now - timedelta(days=300)
+    cutoff = now - timedelta(days=800)
     filtered = []
     for dt, *rest in listforrow:
         dt_parsed = pd.to_datetime(dt, errors="coerce")
         if pd.notna(dt_parsed) and dt_parsed >= cutoff:
             filtered.append([dt_parsed, *rest])
     return filtered
+
+def rmname(name):
+    df = pd.read_excel(path+"NSguildresponses.xlsx", sheet_name="Sheet1")
+    rown = []
+    names = []
+    rows_to_drop = []
+    num_rows = len(df)
+    for i in range(0,num_rows):
+        rown = df.iloc[i].dropna().tolist()
+        names = rown[1]
+        if name.lower() in names.lower():
+            rows_to_drop.append(i)
+            break
+        else:
+            return False
+    df.drop(rows_to_drop, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    upload(df, "Response", max)
+    df.to_excel("holy.xlsx", index=False)
+    return True
 
 def removedoublename(newfilter,num):
     latest = {}
@@ -171,7 +191,7 @@ def sortbyGs(sort,sheet):
                 if isinstance(rown[6], (int,float,np.integer,np.floating)):
                     GS = getGS(rown[4],rown[5],rown[6])
         if isinstance(rown[4], (int,float,np.integer,np.floating)):
-            if GS < 894:
+            if GS < 950:
                 rown.append(GS)
             listforrow.append(rown)
     last_index = len(listforrow[0]) - 1
@@ -213,6 +233,85 @@ def quickfind(name):
         if vname.lower() == name.lower() or dname.lower() == name.lower():
             return rown
     return "no results"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def counter(num,row,out):
     xls = pd.read_excel(path+"holy.xlsx", sheet_name="Sheet1")
