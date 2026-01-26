@@ -118,6 +118,11 @@ def editName(name,choice,value):
         rown[5] = int(value)
     if choice.lower() == "dp":
         rown[6] = int(value)
+    clean = datetime.strptime(
+    str(datetime.now()),
+    "%Y-%m-%d %H:%M:%S.%f"
+    ).strftime("%Y-%m-%d %H:%M:%S")
+    rown[0] = clean
     rown[5] = int(rown[5])
     rown[6] = int(rown[6])
     rmname(name)
