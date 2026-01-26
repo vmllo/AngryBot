@@ -13,10 +13,10 @@ import pandas as pd
 import discord
 from discord.ext import commands
 from discord.ui import View, Button
-from sorter.auto_sort_excel import sortmain,averageGS, sortbyGs,auth,sortbyABC,counter, quickfind, rmname
+from sorter.auto_sort_excel import sortmain,averageGS, sortbyGs,auth,sortbyABC,counter, quickfind, rmname, editName
 from discord import app_commands
 cnames = ["Submission","Discord Name","Family Name","Class","Ap","AAP","DP","Position choice", "Kroggy woggy?","Boats?","PVP?","GS"]
-comands = ["help - it wont help you","getgearsheets(admin) the bot will bully you if not leadership >:D","cmdlookup - bdo resources commands !AB lookup <one of these commands>","setGL <stuff you wanna say to g league people>","reload - doesnt do anything yet","names - lists g league guys","getplayer <name>(gear search)","agetplayer(admin) <name> - admin search the bot will bully you if you arent leadership","getgearsurvey - gear survey","delete - removes pins and deletes commands and bot stuff","button - g league button","status g league status","channelupdate <nameofch> updates lookup commands","lookup <name of lookup command>","updategearsheets- kinda says what it does noob", "rmplayer(admin) - removes a player from sheets (duh)","noobslum - prints out gearsurvey link and fatchudz discord"]
+comands = ["help - it wont help you","getgearsheets(admin) the bot will bully you if not leadership >:D","cmdlookup - bdo resources commands !AB lookup <one of these commands>","setGL <stuff you wanna say to g league people>","reload - doesnt do anything yet","names - lists g league guys","getplayer <name>(gear search)","agetplayer(admin) <name> - admin search the bot will bully you if you arent leadership","getgearsurvey - gear survey","delete - removes pins and deletes commands and bot stuff","button - g league button","status g league status","channelupdate <nameofch> updates lookup commands","lookup <name of lookup command>","updategearsheets- kinda says what it does noob", "rmplayer(admin) - removes a player from sheets (duh)","noobslum - prints out gearsurvey link and fatchudz discord","editap - quick edit ap","editdp - quick edit dp","editaap quick edit aap"]
 intents = discord.Intents.default()
 intents.typing = False
 intents.presences = False
@@ -155,6 +155,91 @@ async def on_message(message):
             await ping_message.add_reaction('💪') 
         if trigger_message == "reload":
             print(ping_message)
+        if new_message[0:6] == "editap":
+            value = int(re.sub(r"\D", "", new_message[7:]))
+            #name = re.sub(r"[^a-zA-Z\s]", "", new_message[7:])
+            displayname = removequ(message.author.display_name.lower())
+            ping_message = await message.channel.send('searching for '  + displayname + ' to update ap to ' + str(value))
+            #name = clean(name)
+            displayname = clean(displayname)
+            outgear = []
+            #name = clean(name.lower())
+            if value > 0:
+                sortmain()
+                editName(displayname,"ap",str(value))
+                sortmain()
+            else:
+                ping_message = await message.channel.send('number needs to be above 0')
+            results = quickfind(displayname,"SortedFamilyname")
+            embed = discord.Embed(title="Player Summary\nFamily name: " + results[2] +"\nDiscord Name: " + message.author.name.lower() + "\nNickname: " + message.author.display_name.lower() + "\nDo you need to update?: https://forms.gle/fnKMBpFJbPpEYrQq6")
+            lens = len(cnames)
+            for i in range(lens):
+                value = str(cnames[i]) + ": " + str(results[i])
+                outgear.append(value)
+            embed.description = "\n".join(f"{name}" for name in outgear)
+            view = YesNo(message.author)
+            await message.channel.send("Do you want this Dm'd?", view=view) 
+            await view.wait()
+            if view.value == True:
+                await message.author.send(embed=embed)
+            elif view.value == False:
+                    await message.channel.send(embed=embed)
+
+        if new_message[0:7] == "editaap":
+            value = int(re.sub(r"\D", "", new_message[8:]))
+            #name = re.sub(r"[^a-zA-Z\s]", "", new_message[7:])
+            displayname = removequ(message.author.display_name.lower())
+            ping_message = await message.channel.send('searching for '  + displayname + ' to update ap to ' + str(value))
+            #name = clean(name)
+            displayname = clean(displayname)
+            outgear = []
+            
+            #name = clean(name.lower())
+            sortmain()
+            editName(displayname,"aap",str(value))
+            sortmain()
+            results = quickfind(displayname,"SortedFamilyname")
+            embed = discord.Embed(title="Player Summary\nFamily name: " + results[2] +"\nDiscord Name: " + message.author.name.lower() + "\nNickname: " + message.author.display_name.lower() + "\nDo you need to update?: https://forms.gle/fnKMBpFJbPpEYrQq6")
+            lens = len(cnames)
+            for i in range(lens):
+                value = str(cnames[i]) + ": " + str(results[i])
+                outgear.append(value)
+            embed.description = "\n".join(f"{name}" for name in outgear)
+            view = YesNo(message.author)
+            await message.channel.send("Do you want this Dm'd?", view=view) 
+            await view.wait()
+            if view.value == True:
+                await message.author.send(embed=embed)
+            elif view.value == False:
+                    await message.channel.send(embed=embed)
+        if new_message[0:6] == "editdp":
+            value = int(re.sub(r"\D", "", new_message[7:]))
+            #name = re.sub(r"[^a-zA-Z\s]", "", new_message[7:])
+            displayname = removequ(message.author.display_name.lower())
+            ping_message = await message.channel.send('searching for '  + displayname + ' to update ap to ' + str(value))
+            #name = clean(name)
+            displayname = clean(displayname)
+            outgear = []
+            
+            #name = clean(name.lower())
+            sortmain()
+            editName(displayname,"dp",str(value))
+            sortmain()
+            results = quickfind(displayname,"SortedFamilyname")
+            embed = discord.Embed(title="Player Summary\nFamily name: " + results[2] +"\nDiscord Name: " + message.author.name.lower() + "\nNickname: " + message.author.display_name.lower() + "\nDo you need to update?: https://forms.gle/fnKMBpFJbPpEYrQq6")
+            lens = len(cnames)
+            for i in range(lens):
+                value = str(cnames[i]) + ": " + str(results[i])
+                outgear.append(value)
+            embed.description = "\n".join(f"{name}" for name in outgear)
+            view = YesNo(message.author)
+            await message.channel.send("Do you want this Dm'd?", view=view) 
+            await view.wait()
+            if view.value == True:
+                await message.author.send(embed=embed)
+            elif view.value == False:
+                    await message.channel.send(embed=embed)
+
         if  rmplayer == "rmplayer":
             ping_message = await message.channel.send('searching for '  + rmplayerhcoice + ' to remove')
             if any(role.name == "Officer" or role.name == "GM" for role in message.author.roles):
@@ -171,7 +256,7 @@ async def on_message(message):
         if gearlookupmessage == "getplayer":
             ping_message = await message.channel.send('searching for ' + getlookupmessagen)
             sortmain()
-            results = quickfind(getlookupmessagen)
+            results = quickfind(getlookupmessagen,"SortedFamilyname")
             outgear = []
             if results != "no results":
                 displayname = removequ(message.author.display_name.lower())
@@ -196,7 +281,7 @@ async def on_message(message):
                 embed = discord.Embed(title="No results.\ncheck spelling please\nIf you arent into the guild then idk wtf you are doing\nIf you typed noob you are stupid... denny")
                 await message.channel.send(embed=embed)
         if new_message[0:10] == "agetplayer":
-            results = quickfind(new_message[11:])
+            results = quickfind(new_message[11:],"SortedFamilyname")
             outgear = []
             if results != "no results":
                 if any(role.name == "Officer" or role.name == "GM" for role in message.author.roles):

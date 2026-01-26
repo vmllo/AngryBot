@@ -109,6 +109,33 @@ def latestfilter(listforrow):
             filtered.append([dt_parsed, *rest])
     return filtered
 
+def editName(name,choice,value):
+    rown = quickfind(name,"Response")
+    newrown = []
+    if choice.lower() == "ap":
+        rown[4] = int(value)
+    if choice.lower() == "aap":
+        rown[5] = int(value)
+    if choice.lower() == "dp":
+        rown[6] = int(value)
+    rown[5] = int(rown[5])
+    rown[6] = int(rown[6])
+    rmname(name)
+    auth("Response")
+    xls = pd.read_excel(path+"NSguildresponses.xlsx", sheet_name="Sheet1")
+    num_rows = len(xls)
+    for i in range(num_rows):
+        newrown.append(xls.iloc[i].dropna().tolist())
+    newrown.append(rown)
+    for na in newrown:
+        na[0] = str(na[0])
+        na[4] = int(na[4])
+        na[5] = int(na[5])
+        na[6] = int(na[6])
+    xls = pd.DataFrame(newrown)
+    upload(xls, "Response", max)
+    xls.to_excel("holy.xlsx", index=False)
+
 def rmname(name):
     df = pd.read_excel(path+"NSguildresponses.xlsx", sheet_name="Sheet1")
     rown = []
@@ -118,11 +145,9 @@ def rmname(name):
     for i in range(0,num_rows):
         rown = df.iloc[i].dropna().tolist()
         names = rown[1]
-        if name.lower() in names.lower():
+        vname = rown[2]
+        if name.lower() in names.lower() or name.lower() in vname.lower():
             rows_to_drop.append(i)
-            break
-        else:
-            return False
     df.drop(rows_to_drop, inplace=True)
     df.reset_index(drop=True, inplace=True)
     upload(df, "Response", max)
@@ -221,8 +246,8 @@ def averageGS(row):
     xls.to_excel("holy.xlsx", index=False)
     return total
 
-def quickfind(name):
-    auth("SortedFamilyname")
+def quickfind(name,sheet):
+    auth(sheet)
     xls = pd.read_excel(path+"NSguildresponses.xlsx", sheet_name="Sheet1")
     num_rows = len(xls)
     results = []
@@ -233,85 +258,6 @@ def quickfind(name):
         if vname.lower() == name.lower() or dname.lower() == name.lower():
             return rown
     return "no results"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def counter(num,row,out):
     xls = pd.read_excel(path+"holy.xlsx", sheet_name="Sheet1")
